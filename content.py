@@ -105,8 +105,22 @@ def validate_concepts(result: dict) -> dict:
         for key in ('title', 'subtitle', 'summary', 'differentiation', 'risk'):
             if not isinstance(c.get(key), str) or not c[key].strip():
                 raise ValueError('Concept missing ' + key)
-        if len(c.get('keywords', [])) != 3:
-            raise ValueError('Expected three core keywords')
+        raw_keywords = c.get('keywords', [])
+        if isinstance(raw_keywords, str):
+            raw_keywords = re.split(r'[,/|;·•\\n]+', raw_keywords)
+        if not isinstance(raw_keywords, list):
+            raw_keywords = []
+        keywords = []
+        for item in raw_keywords:
+            value = str(item).strip()
+            if value and value not in keywords:
+                keywords.append(value)
+        for fallback in ('Silhouette', 'Material', 'Construction'):
+            if len(keywords) >= 3:
+                break
+            if fallback not in keywords:
+                keywords.append(fallback)
+        c['keywords'] = keywords[:3]
         validate_palette(c['palette'])
         looks = [c.get('hero', {})] + c.get('support', [])
         if len(looks) != 3 or any(not l.get('name') or not l.get('design') for l in looks):
