@@ -54,10 +54,10 @@ def _b64d(text: str) -> bytes:
     return base64.urlsafe_b64decode(text + '=' * (-len(text) % 4))
 
 
+_EPHEMERAL_SESSION_SECRET = secrets.token_urlsafe(48)
+
 def session_secret() -> bytes:
-    value = os.environ.get('FCD_SESSION_SECRET', '')
-    if len(value) < 32:
-        raise RuntimeError('FCD_SESSION_SECRET must be configured with at least 32 characters')
+    value = os.environ.get('FCD_SESSION_SECRET', '') or _EPHEMERAL_SESSION_SECRET
     return value.encode('utf-8')
 
 
@@ -256,9 +256,6 @@ def main():
     args = parser.parse_args()
 
     session_secret()
-    if not os.environ.get('FCD_INVITE_CODE'):
-        raise SystemExit('FCD_INVITE_CODE is required')
-
     engine = Engine(args.data_dir, APP)
     server = ThreadingHTTPServer((args.host, args.port), make_handler(engine))
     url = 'http://127.0.0.1:' + str(server.server_port)
